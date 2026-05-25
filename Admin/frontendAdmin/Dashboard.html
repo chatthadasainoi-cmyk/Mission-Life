@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mission Lifes - Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;700;800&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="user-profile">
+            <div class="avatar-placeholder">
+                <img src="Lo.png" alt="Admin Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
+            </div>
+            <div class="user-info">
+                <span class="title">MISSION LIFES</span>
+                <span class="rank" id="admin-display">สวัสดี Admin</span>
+            </div>
+        </div>
+        <nav class="nav-links">
+            <a href="Dashboard.html" class="active">Dashbord</a>
+            <a href="Quest.html">Quest</a>
+            <a href="Personal.html">Personal</a>
+            <a href="feedback.html">Feedback</a>
+        </nav>
+    </header>
+
+    <main class="dashboard-container">
+        <section class="stats-row">
+            <div class="stat-card">
+                <span class="label">Total</span>
+                <h2 class="value green-text" id="total-users-val">0 USERS</h2>
+                <div class="sub-info">👤 PEAK Online</div>
+            </div>
+            <div class="stat-card">
+                <span class="label">Total</span>
+                <h2 class="value blue-text" id="online-users-val">0 FEEDBACK</h2>
+                <div class="sub-info">💬 FEEDBACK</div>
+            </div>
+            <div class="stat-card">
+                <span class="label">Total</span>
+                <h2 class="value white-text" id="total-missions-val">0 MISSIONS</h2>
+                <div class="sub-info">📋 MISSIONS</div>
+            </div>
+        </section>
+
+        <section class="main-grid">
+            <div class="charts-column">
+                <div class="chart-box">
+                    <h3>Most Popular Mission</h3>
+                    <div class="bar-chart">
+                        <div class="bar-item" id="top1">
+                            <div class="bar" style="width: 0%; background: #00d2ff;"></div>
+                            <span>0%</span>
+                        </div>
+                        <div class="bar-item" id="top2">
+                            <div class="bar" style="width: 0%; background: #2f80ed;"></div>
+                            <span>0%</span>
+                        </div>
+                        <div class="bar-item" id="top3">
+                            <div class="bar" style="width: 0%; background: #56ccf2;"></div>
+                            <span>0%</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="chart-box">
+                    <h3>New Accounts (Last 12 Months)</h3>
+                    <div style="height: 150px; position: relative;">
+                        <canvas id="playersOnlineChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="activity-box">
+                <div class="box-header-title">Last users activity</div>
+                
+                <div class="search-container">
+                    <div class="search-input-group">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" class="search-field" placeholder="Search User...">
+                    </div>
+                    <button class="search-filter-btn">Y</button>
+                </div>
+
+                <div class="table-scroll">
+                    <table class="activity-table">
+                        <thead>
+                            <tr>
+                                <th>Users</th>
+                                <th>User ID</th>
+                                <th>Email</th>
+                                <th>Date Created</th>
+                            </tr>
+                        </thead>
+                        <tbody id="activity-tbody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // 🔥 1. Firebase Config
+    const firebaseConfig = {
+        apiKey: "AIzaSy...", 
+        authDomain: "missionlife-3c76b.firebaseapp.com",
+        projectId: "missionlife-3c76b",
+        storageBucket: "missionlife-3c76b.appspot.com",
+        messagingSenderId: "...",
+        appId: "..."
+    };
+
+    if (!firebase.apps.length) { 
+        firebase.initializeApp(firebaseConfig); 
+    }
+    const db = firebase.firestore();
+
+    // ฟังก์ชันสร้าง/สุ่มสีอวาตาร์กรณีผู้ใช้ไม่มีรูป
+    function getAvatar(photoUrl, name) {
+        if (photoUrl && photoUrl !== "") {
+            return `<img src="${photoUrl}" style="width:100%; height:100%; border-radius:10px; object-fit:cover;">`;
+        } else {
+            const colors = ['#1abc9c', '#2ecc71', '#3498db', '#9b59b6', '#34495e', '#16a085', '#27ae60', '#2980b9', '#8e44ad', '#2c3e50', '#f1c40f', '#e67e22', '#e74c3c', '#95a5a6', '#f39c12', '#d35400', '#c0392b', '#7f8c8d'];
+            const firstChar = name ? name.charAt(0).toUpperCase() : '?';
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            
+            return `
+                <div style="width:100%; height:100%; background-color:${randomColor}; 
+                            display:flex; align-items:center; justify-content:center; 
+                            color:white; font-weight:bold; font-size:1.2rem; border-radius:10px;">
+                    ${firstChar}
+                </div>`;
+        }
+    }
+
+    // ฟังก์ชันดึงวันที่ปัจจุบันในรูปแบบ "YYYY-MM-DD"
+    function getTodayString() {
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    // ✅ ฟังก์ชันดึงข้อมูลสถิติ 3 กล่องด้านบน
+    async function updateDashboardStats() {
+        try {
+            // 1. ดึงจำนวนผู้ใช้ทั้งหมด
+            const usersSnapshot = await db.collection("users").get();
+            document.getElementById('total-users-val').innerText = `${usersSnapshot.size.toLocaleString()} USERS`;
+
+            // 2. เปลี่ยนจาก "feedback" เป็น "feedback_db"
+            const feedbackSnapshot = await db.collection("feedback_db").get();
+            document.getElementById('online-users-val').innerText = `${feedbackSnapshot.size.toLocaleString()} FEEDBACK`;
+
+            // 3. ดึงจำนวนมิชชัน
+            const missionSnapshot = await db.collection("missions").get();
+            document.getElementById('total-missions-val').innerText = `${missionSnapshot.size.toLocaleString()} MISSIONS`;
+            
+        } catch (error) {
+            console.error("Error updating stats:", error);
+        }
+    }
+
+    // ✅ ฟังก์ชันโหลดกิจกรรมผู้ใช้ล่าสุด (แค่รายชื่อ User + User ID เต็ม)
+    function loadLastActivity() {
+        const tbody = document.getElementById('activity-tbody');
+        
+        db.collection("users")
+          .orderBy("characterCreatedAt", "desc")
+          .limit(5)
+          .onSnapshot((snapshot) => {
+            tbody.innerHTML = ''; 
+            
+            if (snapshot.empty) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:var(--text-grey);">ไม่มีผู้ใช้งานในระบบ</td></tr>`;
+                return;
+            }
+
+            snapshot.forEach((doc) => {
+                const u = doc.data();
+                const tr = document.createElement('tr');
+                
+                let displayDate = u.characterCreatedAt 
+                    ? u.characterCreatedAt.replace('T', ' ').substring(0, 16) 
+                    : '-';
+
+                tr.innerHTML = `
+                    <td class="user-cell">
+                        <div class="table-avatar">
+                            ${getAvatar(u.avatarSource, u.characterName || u.username)}
+                        </div>
+                        <div>
+                            <strong>${u.characterName || u.username || 'Unknown'}</strong>
+                        </div>
+                    </td>
+                    <td><small>${doc.id}</small></td>
+                    <td>${u.email || '-'}</td>
+                    <td>${displayDate}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }, (error) => {
+            console.error("Error loading activities:", error);
+        });
+    }
+
+    // ✅ ฟังก์ชันภารกิจยอดนิยม
+    async function updatePopularMissions() {
+        try {
+            const questSnap = await db.collection("missions").get();
+            let missionCounts = {}; 
+            let totalAllAccepts = 0;
+
+            questSnap.forEach(doc => {
+                const data = doc.data();
+                const mName = data.missionName;
+                if (mName) {
+                    missionCounts[mName] = (missionCounts[mName] || 0) + 1;
+                    totalAllAccepts++;
+                }
+            });
+
+            let sortedMissions = [];
+            for (let name in missionCounts) {
+                sortedMissions.push({ name: name, count: missionCounts[name] });
+            }
+            sortedMissions.sort((a, b) => b.count - a.count);
+
+            const top3 = sortedMissions.slice(0, 3);
+
+            for (let index = 0; index < 3; index++) {
+                const rank = index + 1;
+                const item = document.getElementById(`top${rank}`);
+                
+                if (item) {
+                    const bar = item.querySelector('.bar');
+                    const span = item.querySelector('span');
+                    
+                    if (top3[index]) {
+                        const m = top3[index];
+                        const percentage = totalAllAccepts > 0 ? Math.round((m.count / totalAllAccepts) * 100) : 0;
+                        
+                        if (bar) bar.style.width = `${percentage}%`;
+                        if (span) span.innerText = `${m.name} (${percentage}%)`;
+                        item.setAttribute('title', m.name);
+                    } else {
+                        if (bar) bar.style.width = `0%`;
+                        if (span) span.innerText = `0%`;
+                        item.removeAttribute('title');
+                    }
+                }
+            }
+        } catch (error) {
+            console.error("Error updating popular missions:", error);
+        }
+    }
+
+    // ✅ ฟังก์ชันกราฟสถิติบัญชีใหม่ 12 เดือน
+async function updateOnlineChart() {
+    const ctxElement = document.getElementById('playersOnlineChart');
+    if (!ctxElement) return;
+    const ctx = ctxElement.getContext('2d');
+
+    const last12Months = [];
+    const monthlyUserCounts = {};
+
+    // สร้าง array 12 เดือนที่ผ่านมา
+    for (let i = 11; i >= 0; i--) {
+        const d = new Date();
+        d.setMonth(d.getMonth() - i);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const monthStr = `${year}-${month}`;
+        
+        last12Months.push(monthStr);
+        monthlyUserCounts[monthStr] = 0; // เริ่มต้นเป็น 0
+    }
+
+    try {
+        // ดึงทุก users
+        const usersSnap = await db.collection("users").get();
+        
+        usersSnap.forEach(doc => {
+            const data = doc.data();
+            const createdAt = data.characterCreatedAt; // ใช้ field นี้
+            
+            // ถ้า characterCreatedAt อยู่ใน 12 เดือนที่ผ่านมา ให้นับ
+            if (createdAt && typeof createdAt === 'string') {
+                const createdMonth = createdAt.substring(0, 7); // เอาแค่ YYYY-MM
+                
+                if (monthlyUserCounts.hasOwnProperty(createdMonth)) {
+                    monthlyUserCounts[createdMonth]++;
+                }
+            }
+        });
+
+        // สร้างป้ายกำกับ (เดือน)
+        const displayLabels = last12Months.map(monthStr => {
+            const [year, month] = monthStr.split('-');
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            return `${monthNames[parseInt(month) - 1]} '${year.substring(2)}`;
+        });
+
+        // สร้างกราฟ
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: displayLabels, 
+                datasets: [{
+                    label: 'New Users',
+                    data: last12Months.map(month => monthlyUserCounts[month]), 
+                    borderColor: '#00d2ff',
+                    backgroundColor: 'rgba(0, 210, 255, 0.2)',
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 2,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#00d2ff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { display: true, color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { 
+                            font: { size: 10 },
+                            color: '#a0aec0',
+                            stepSize: 1,
+                            callback: function(value) { if (value % 1 === 0) return value; }
+                        }
+                    },
+                    x: { 
+                        grid: { display: false },
+                        ticks: { font: { size: 10 }, color: '#a0aec0' }
+                    }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        console.log("✅ Chart updated (12 months):", monthlyUserCounts);
+        
+    } catch (error) {
+        console.error("Error updating chart:", error);
+    }
+}
+    // ✅ ระบบค้นหาข้อมูลในตารางกิจกรรมล่าสุด
+    document.querySelector('.search-field').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll('.activity-table tbody tr');
+        rows.forEach(row => {
+            if(row.cells.length === 1) return; 
+            row.style.display = row.innerText.toLowerCase().includes(searchTerm) ? '' : 'none';
+        });
+    });
+
+    // ✅ เรียกทำงานเมื่อโหลดหน้าจอ
+    window.onload = () => {
+        updateDashboardStats();
+        loadLastActivity();
+        updatePopularMissions();
+        updateOnlineChart();
+    };
+</script>
+
+<style>
+    :root {
+        --bg-dark: #0d1b2a;
+        --card-bg: #1b263b;
+        --border-color: #415a77;
+        --accent-green: #2ecc71;
+        --accent-blue: #00d2ff;
+        --text-grey: #a0aec0;
+    }
+
+    body {
+        background-color: #141e30;
+        color: white;
+        font-family: 'Kanit', sans-serif;
+        margin: 0;
+    }
+
+    .navbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px 40px;
+        border-bottom: 2px solid white;
+    }
+
+    .user-profile { display: flex; align-items: center; gap: 15px; }
+    .avatar-placeholder { width: 50px; height: 50px; background: #555; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center;}
+    .user-info { display: flex; flex-direction: column; }
+    .title { display: block; font-weight: bold; font-size: 1.2rem; }
+    .rank { font-size: 0.8rem; color: #ccc; }
+    .nav-links { display: flex; gap: 35px; }
+    .nav-links a { color: white; text-decoration: none; font-size: 1.1rem; padding-bottom: 5px; }
+    .nav-links a.active { border-bottom: 3px solid white; font-weight: bold; }
+
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; padding: 30px 40px; }
+    .stat-card { background: var(--card-bg); padding: 25px; border-radius: 20px; border: 1px solid var(--border-color); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+    .stat-card .label { color: var(--text-grey); font-size: 0.9rem; }
+    .stat-card .value { font-size: 2.2rem; margin: 10px 0; font-weight: 700; }
+    .green-text { color: var(--accent-green); }
+    .blue-text { color: var(--accent-blue); }
+    .white-text { color: white; }
+    .sub-info { display: flex; align-items: center; gap: 8px; color: var(--text-grey); font-size: 0.85rem; }
+
+    .main-grid { display: grid; grid-template-columns: 380px 1fr; gap: 25px; padding: 0 40px; }
+    .charts-column { display: flex; flex-direction: column; gap: 25px; }
+    .chart-box { background: white; color: #333; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    .chart-box h3 { font-size: 1rem; margin-bottom: 15px; text-align: center; font-weight: 700; }
+    .bar-chart { display: flex; flex-direction: column; gap: 15px; }
+    .bar-item { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 0.9rem; }
+    .bar { height: 12px; border-radius: 10px; transition: width 0.5s; }
+
+    .activity-box { background: var(--card-bg); border-radius: 20px; padding: 25px; border: 1px solid var(--border-color); }
+    .box-header-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 20px; }
+    .search-container { display: flex; justify-content: flex-start; align-items: center; gap: 12px; padding: 0 0 20px 0; }
+    .search-input-group { position: relative; width: 100%; max-width: 350px; }
+    .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-grey); font-size: 0.9rem; pointer-events: none; }
+    .search-field { width: 100%; height: 35px; padding: 8px 15px 8px 38px; background-color: var(--bg-dark); border: 1px solid var(--border-color); border-radius: 6px; color: white; font-family: 'Kanit', sans-serif; font-size: 0.9rem; transition: all 0.3s ease; }
+    .search-field:focus { outline: none; border-color: var(--accent-blue); box-shadow: 0 0 8px rgba(0, 210, 255, 0.2); }
+    .search-filter-btn { width: 35px; height: 35px; background-color: white; border: 1px solid #000; border-radius: 4px; color: #000; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+    .search-filter-btn:hover { background-color: #edf2f7; transform: scale(1.05); }
+
+    .table-scroll { overflow-x: auto; width: 100%; }
+    .activity-table { width: 100%; border-collapse: collapse; }
+    .activity-table th { text-align: left; color: var(--text-grey); font-size: 0.8rem; text-transform: uppercase; padding-bottom: 15px; border-bottom: 1px solid var(--border-color); }
+    .activity-table td { padding: 15px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .user-cell { display: flex; align-items: center; gap: 12px; }
+    .table-avatar { width: 40px; height: 40px; background: #2d3748; border-radius: 10px; border: 1px solid var(--border-color); overflow: hidden;}
+</style>
+</body>
+</html>

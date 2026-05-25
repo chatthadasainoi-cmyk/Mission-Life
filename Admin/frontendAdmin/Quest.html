@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mission Life - Quest</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-deep: #141e30;
+            --bg-card: #243447;
+            --border-grey: #415a77;
+            --accent-blue: #3498db;
+            --accent-green: #2ecc71;
+            --text-white: #ffffff;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-white);
+            font-family: 'Kanit', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Navbar */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 40px;
+            border-bottom: 2px solid white;
+        }
+
+        .user-profile { display: flex; align-items: center; gap: 15px; }
+        .avatar-placeholder { width: 50px; height: 50px; background: #555; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .title { display: block; font-weight: bold; font-size: 1.2rem; }
+        .rank { font-size: 0.8rem; color: #ccc; }
+
+        .nav-links { display: flex; gap: 35px; }
+        .nav-links a { color: white; text-decoration: none; font-size: 1.1rem; padding-bottom: 5px; }
+        .nav-links a.active { border-bottom: 3px solid white; font-weight: bold; }
+
+        /* Layout Grid */
+        .quest-layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+            padding: 20px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .sidebar, .main-content {
+            background: var(--bg-card);
+            border: 1px solid var(--border-grey);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .box-header {
+            text-align: center;
+            padding: 12px;
+            background: rgba(255,255,255,0.05);
+            border-bottom: 1px solid var(--border-grey);
+            font-weight: 600;
+        }
+
+        .scroll-content { flex: 1; overflow-y: auto; padding: 15px; }
+
+        /* User Card */
+        .user-card {
+            background: linear-gradient(180deg, #34495e, #2c3e50);
+            border: 1px solid #7f8c8d;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .user-card:hover { transform: scale(1.02); }
+        .user-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.8rem; }
+        .lvl-star { color: #f1c40f; }
+
+        /* Mission Card */
+        .mission-card {
+            display: grid;
+            grid-template-columns: 160px 1fr 90px;
+            background: linear-gradient(145deg, #2c3e50, #1a252f);
+            border: 2px solid #7f8c8d;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            min-height: 120px;
+            transition: 0.3s;
+        }
+
+        .mission-card:hover { border-color: var(--accent-blue); box-shadow: 0 0 10px rgba(52, 152, 219, 0.3); }
+
+        .m-type {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-right: 2px solid #7f8c8d;
+            padding: 10px;
+        }
+
+        .m-reward { color: #f1c40f; font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 5px; }
+
+        .m-details { padding: 15px 25px; display: flex; flex-direction: column; justify-content: center; }
+
+        .m-condition { font-size: 0.9rem; color: #bdc3c7; line-height: 1.4; }
+
+        .m-action { display: flex; justify-content: center; align-items: center; padding-right: 10px; }
+
+        /* 🟢 ปุ่มแก้ไขทรงเหลี่ยมโค้งสีเขียวคงเดิม */
+        .edit-icon-btn { 
+            background: #27ae60; 
+            border: none; 
+            color: white; 
+            width: 35px; 
+            height: 35px; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            transition: 0.3s;
+        }
+
+        .edit-icon-btn:hover {
+            background: #229954;
+            transform: scale(1.05);
+        }
+
+        /* 🔴 ปุ่มลบดีไซน์โค้งมนสีแดง ไอคอนถังขยะแบบเรียบง่ายสีขาวสะอาด */
+        .delete-icon-btn { 
+            background: #e74c3c; 
+            border: none; 
+            color: #ffffff; 
+            width: 35px; 
+            height: 35px; 
+            border-radius: 6px; 
+            cursor: pointer;
+            margin-left: 8px;
+            font-size: 1.1rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: 0.3s;
+        }
+
+        .delete-icon-btn:hover {
+            background: #c0392b;
+            transform: scale(1.05);
+        }
+
+        .add-mission-floating {
+            position: absolute;
+            bottom: 20px; right: 20px;
+            background: #27ae60; color: white;
+            padding: 12px 25px; border-radius: 10px;
+            text-decoration: none; font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            transition: 0.3s;
+        }
+        
+        .add-mission-floating:hover {
+            background: #229954;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="user-profile">
+            <div class="avatar-placeholder">
+                <img src="Lo.png" alt="Admin Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
+            </div>
+            <div class="user-info">
+                <span class="title">MISSION LIFE</span>
+                <span class="rank" id="admin-display">สวัสดี Admin</span>
+            </div>
+        </div>
+        <nav class="nav-links">
+            <a href="Dashboard.html">Dashboard</a>
+            <a href="Quest.html" class="active">Quest</a>
+            <a href="Personal.html">Personal</a>
+            <a href="feedback.html">Feedback</a>
+        </nav>
+    </header>
+
+    <main class="quest-layout">
+        <aside class="sidebar">
+            <div class="box-header">USER LIST</div>
+            <div class="scroll-content" id="user-list-container">
+                <p style="text-align: center; color: #888;">กำลังโหลดรายชื่อ...</p>
+            </div>
+        </aside>
+
+        <section class="main-content">
+            <div class="box-header">MISSION USER</div>
+            <div class="scroll-content" id="mission-list-container">
+                <p style="text-align: center; color: #888;">กำลังโหลดภารกิจ...</p>
+            </div>
+            <a href="Addmission.html" class="add-mission-floating">+ เพิ่ม mission</a>
+        </section>
+    </main>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+
+        // 1. ฟังก์ชันดึง User ทั้งหมด
+        async function loadUsers() {
+            try {
+                const res = await fetch(`${API_URL}/users`);
+                const users = await res.json();
+                const container = document.getElementById('user-list-container');
+                container.innerHTML = '';
+
+                users.forEach(u => {
+                    container.innerHTML += `
+                        <div class="user-card">
+                            <div class="user-row">
+                                <strong>ID: ${u.id.substring(0, 8)}...</strong>
+                                <span class="lvl-star">⭐ Lvl.${u.level || 1}</span>
+                            </div>
+                            <div style="font-size: 0.7rem; color: #aaa;">${u.email || 'No Email'}</div>
+                        </div>
+                    `;
+                });
+            } catch (err) {
+                console.error("❌ User Load Error:", err);
+            }
+        }
+
+        // 2. ฟังก์ชันดึง Mission และจัดเรียงจากใหม่ไปเก่าตามฟาร์เบส Timestampที่มีอยู่แล้ว
+        async function loadMissions() {
+            try {
+                const res = await fetch(`${API_URL}/missions`);
+                let missions = await res.json();
+                const container = document.getElementById('mission-list-container');
+                container.innerHTML = '';
+
+                if (!missions || missions.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; padding: 20px;">ยังไม่มีภารกิจในฐานข้อมูล</p>';
+                    return;
+                }
+
+                // การสลับจัดเรียงตามเวลาแบบครอบคลุม
+                missions.sort((a, b) => {
+                    let timeA, timeB;
+
+                    if (a.createdAt) {
+                        if (typeof a.createdAt === 'object' && a.createdAt._seconds) {
+                            timeA = a.createdAt._seconds * 1000;
+                        } else if (a.createdAt.seconds) {
+                            timeA = a.createdAt.seconds * 1000;
+                        } else {
+                            timeA = new Date(a.createdAt).getTime();
+                        }
+                    } else { timeA = 0; }
+
+                    if (b.createdAt) {
+                        if (typeof b.createdAt === 'object' && b.createdAt._seconds) {
+                            timeB = b.createdAt._seconds * 1000;
+                        } else if (b.createdAt.seconds) {
+                            timeB = b.createdAt.seconds * 1000;
+                        } else {
+                            timeB = new Date(b.createdAt).getTime();
+                        }
+                    } else { timeB = 0; }
+
+                    return timeB - timeA; // ใหม่ล่าสุดขึ้นบนสุด
+                });
+
+                missions.forEach(m => {
+                    const missionCategory = m.category || 'ทั่วไป'; 
+                    const experience = m.xp || 0; 
+                    const duration = m.duration || '-';
+                    const missionId = m.id;
+
+                    container.innerHTML += `
+                        <div class="mission-card" data-mission-id="${missionId}">
+                            <div class="m-type">
+                                <p>ประเภท : <strong>${missionCategory}</strong></p>
+                                <span class="m-reward">⭐ ${experience}</span>
+                            </div>
+
+                            <div class="m-details">
+                                <div class="m-header-row">
+                                    <span style="font-size: 1.2rem; font-weight: 600;">ชื่อภารกิจ : ${m.missionName}</span>
+                                </div>
+                                <p class="m-condition">ระยะเวลา : ${duration} วัน</p>
+                            </div>
+
+                            <div class="m-action">
+                                <a href="./Updatemission.html?id=${missionId}">
+                                    <button class="edit-icon-btn" title="แก้ไข">✎</button>
+                                </a>
+                                <button class="delete-icon-btn" onclick="deleteMission('${missionId}')" title="ลบ">🗑</button>
+                            </div>
+                        </div>
+                    `;
+                });
+            } catch (err) {
+                console.error("❌ Mission Load Error:", err);
+                document.getElementById('mission-list-container').innerHTML = '<p style="text-align: center; color: red;">โหลดข้อมูลล้มเหลว</p>';
+            }
+        }
+
+        // 3. ฟังก์ชันลบ Mission
+async function deleteMission(missionId) {
+    if (!confirm(`⚠️ ยืนยันการลบ Mission นี้ออกจากระบบอย่างถาวร?`)) {
+        return;
+    }
+
+    try {
+        console.log("🗑️ ส่งคำขอลบ Mission ID:", missionId);
+
+        // ✅ Debug: ดู URL ที่ส่ง
+        const url = `${API_URL}/missions/${missionId}`;
+        console.log("📍 URL:", url);
+        console.log("📍 API_URL:", API_URL);
+        console.log("📍 missionId:", missionId);
+
+        const res = await fetch(url, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        console.log("📊 Response Status:", res.status);
+        console.log("📊 Response OK:", res.ok);
+
+        if (!res.ok) {
+            const errorText = await res.text();
+            console.error("❌ Error Response:", errorText);
+            throw new Error(`เซิร์ฟเวอร์ตอบกลับด้วยสถานะ: ${res.status}`);
+        }
+
+        let data;
+        try {
+            data = await res.json();
+        } catch (jsonErr) {
+            data = { success: true }; 
+        }
+
+        if (data.success) {
+            alert("🎉 ลบ Mission สำเร็จ");
+            await loadMissions();
+        } else {
+            alert("❌ ลบไม่สำเร็จ: " + (data.message || "เกิดข้อผิดพลาด"));
+        }
+
+    } catch (err) {
+        console.error("❌ Delete Error:", err);
+        alert("❌ เกิดข้อผิดพลาดในระบบ: " + err.message);
+    }
+}
+
+        window.onload = () => {
+            console.log("🚀 โหลดหน้า Quest.html");
+            loadUsers();
+            loadMissions();
+        };
+    </script>
+</body>
+</html>

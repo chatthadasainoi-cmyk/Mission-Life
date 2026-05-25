@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Feedback - Mission Life</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0d1b2a;
+            --accent-green: #2ecc71;
+            --text-grey: #a0aec0;
+        }
+
+        body {
+            background-color: #141e30;
+            color: white;
+            font-family: 'Kanit', sans-serif;
+            margin: 0;
+        }
+        
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 40px;
+            border-bottom: 2px solid white;
+        }
+
+        .user-profile { display: flex; align-items: center; gap: 15px; }
+        .avatar-placeholder { width: 50px; height: 50px; background: #555; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .user-info { display: flex; flex-direction: column; }
+        .title { display: block; font-weight: bold; font-size: 1.2rem; }
+        .rank { font-size: 0.8rem; color: #ccc; }
+        .nav-links { display: flex; gap: 35px; }
+        .nav-links a { color: white; text-decoration: none; font-size: 1.1rem; padding-bottom: 5px; }
+        .nav-links a.active { border-bottom: 3px solid white; font-weight: bold; }
+
+        /* Layout Content */
+        .feedback-container { padding: 20px 40px; height: calc(100vh - 80px); }
+        .feedback-box { background: #243447; border-radius: 8px; border: 1px solid #415a77; display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+        .box-header { text-align: center; padding: 12px; background: rgba(255,255,255,0.05); border-bottom: 1px solid #415a77; font-weight: 600; }
+        .scroll-area { flex: 1; padding: 20px; overflow-y: auto; }
+
+        /* Card Styles */
+        .feedback-card { display: flex; background: linear-gradient(145deg, #2c3e50, #1a252f); border: 2px solid #7f8c8d; border-radius: 15px; margin-bottom: 15px; }
+        .sender-info { padding: 15px; border-right: 2px solid #7f8c8d; width: 220px; display: flex; align-items: center; gap: 15px; }
+        
+        .sender-avatar { width: 60px; height: 60px; border-radius: 5px; overflow: hidden; border: 1px solid white; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+        
+        .sender-meta { display: flex; flex-direction: column; gap: 2px; }
+        .d-block { display: block; }
+        .text-grey { color: #bdc3c7; font-size: 0.75rem; word-break: break-all; }
+
+        .message-area { flex: 1; display: flex; align-items: center; padding: 0 20px; position: relative; }
+        .star-icon { font-size: 1.5rem; color: #f1c40f; margin-right: 20px; cursor: pointer; }
+        .message-content { flex: 1; text-align: center; }
+        .date-time { font-size: 0.8rem; opacity: 0.7; }
+        .action-icons { display: flex; gap: 15px; align-items: center; }
+        .mail-box { position: relative; font-size: 1.5rem; cursor: pointer; }
+        .notif-green-dot { width: 8px; height: 8px; background: var(--accent-green); border-radius: 50%; position: absolute; top: 0; right: 0; }
+        .more-btn { background: #7f8c8d; border: none; padding: 5px 12px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
+        /* Detail View */
+        .feedback-detail-view { padding: 10px; animation: fadeIn 0.3s; }
+        .detail-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .full-message-text { background: rgba(0,0,0,0.3); padding: 30px; border-radius: 15px; line-height: 1.8; border: 1px solid rgba(255,255,255,0.1); font-size: 1.1rem; min-height: 200px; margin-bottom: 20px; }
+        .back-btn-circle { width: 40px; height: 40px; background: white; color: black; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; cursor: pointer; }
+        .trash-btn { background: #e74c3c; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="user-profile">
+            <div class="avatar-placeholder">
+                <img src="Lo.png" alt="Admin Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
+            </div>
+            <div class="user-info">
+                <span class="title">MISSION LIFE</span>
+                <span class="rank" id="admin-display">สวัสดี Admin</span>
+            </div>
+        </div>
+        <nav class="nav-links">
+            <a href="Dashboard.html">Dashboard</a>
+            <a href="Quest.html">Quest</a>
+            <a href="Personal.html">Personal</a>
+            <a href="feedback.html" class="active">Feedback</a>
+        </nav>
+    </header>
+
+    <main class="feedback-container">
+        <div class="feedback-box">
+            <div class="box-header">FEEDBACK FROM USER</div>
+            <div class="scroll-area" id="main-scroll-area">
+                <p style="text-align:center; padding:20px;">กำลังโหลดข้อมูล...</p>
+            </div>
+        </div>
+    </main>
+
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+<script>
+    // ตั้งค่า Firebase ตาม Project ของคุณ
+    const firebaseConfig = {
+        apiKey: "AIzaSy...", 
+        authDomain: "missionlife-3c76b.firebaseapp.com",
+        projectId: "missionlife-3c76b",
+        storageBucket: "missionlife-3c76b.appspot.com",
+        messagingSenderId: "...",
+        appId: "..."
+    };
+
+    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+    const db = firebase.firestore();
+
+    // --- 1. ฟังก์ชันจัดการเมื่อภาพโหลดไม่ได้ หรือส่งข้อมูลมาผิดพลาด ---
+    function handleAvatarError(imgElement, name) {
+        const colors = ['#e57373', '#f06292', '#ba68c8', '#9575cd', '#7986cb', '#64b5f6', '#4fc3f7', '#4db6ac', '#81c784', '#aed581', '#ffb74d', '#ff8a65'];
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        const firstChar = name && typeof name === 'string' && name.length > 0 ? name.charAt(0).toUpperCase() : '?';
+
+        const fallbackNode = document.createElement('div');
+        fallbackNode.style.width = '100%';
+        fallbackNode.style.height = '100%';
+        fallbackNode.style.backgroundColor = randomColor;
+        fallbackNode.style.display = 'flex';
+        fallbackNode.style.alignItems = 'center';
+        fallbackNode.style.justifyContent = 'center';
+        fallbackNode.style.color = 'white';
+        fallbackNode.style.fontWeight = 'bold';
+        fallbackNode.style.fontSize = '1.4rem';
+        fallbackNode.innerText = firstChar;
+
+        imgElement.style.display = 'none';
+        if (imgElement.parentNode) {
+            imgElement.parentNode.appendChild(fallbackNode);
+        }
+    }
+
+    // --- 2. ฟังก์ชันสร้างแท็กแสดงผลรูปภาพโปรไฟล์ ---
+    function getAvatarHTML(photoUrl, name) {
+        const safeName = name ? name.replace(/'/g, "\\'") : 'User';
+
+        if (photoUrl && photoUrl.trim() !== "" && !photoUrl.includes('placeholder')) {
+            return `
+                <img src="${photoUrl}" style="width:100%; height:100%; object-fit:cover; display:block;" 
+                     onerror="handleAvatarError(this, '${safeName}')">
+            `;
+        } else {
+            const colors = ['#e57373', '#f06292', '#ba68c8', '#9575cd', '#7986cb', '#64b5f6', '#4fc3f7', '#4db6ac', '#81c784', '#aed581', '#ffb74d', '#ff8a65'];
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            const firstChar = name && typeof name === 'string' && name.length > 0 ? name.charAt(0).toUpperCase() : '?';
+            return `<div style="width:100%; height:100%; background-color:${randomColor}; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; font-size:1.4rem;">${firstChar}</div>`;
+        }
+    }
+
+    // --- 3. ฟังก์ชันขยายข้อความแบบเต็ม (Detail View) ---
+    async function expandMessage(id, text, username) {
+        const scrollArea = document.getElementById('main-scroll-area');
+        
+        // ค้นหาข้อมูลผู้ใช้ในคอลเลกชัน "users" โดยเช็กทั้ง username และ characterName
+        let userSnapshot = await db.collection("users").where("username", "==", username).limit(1).get();
+        if (userSnapshot.empty) {
+            userSnapshot = await db.collection("users").where("characterName", "==", username).limit(1).get();
+        }
+        
+        let uData = null;
+        let uid = "N/A";
+        if (!userSnapshot.empty) {
+            uData = userSnapshot.docs[0].data();
+            uid = userSnapshot.docs[0].id;
+        }
+
+        // แสดงผลหน้าขยายรายละเอียด ล็อกข้อมูลผู้ส่งให้อยู่ซ้ายมือขนานไปกับรูปโปรไฟล์
+        scrollArea.innerHTML = `
+            <div class="feedback-detail-view">
+                <div class="detail-header" style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                    <div style="display:flex; align-items:center; gap:15px;">
+                        <div class="sender-avatar" style="width:60px; height:60px; border-radius:5px; overflow:hidden; border:1px solid white; flex-shrink:0;">
+                            ${getAvatarHTML(uData ? uData.avatarSource : null, username)}
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:2px; text-align:left;">
+                            <strong style="font-size:1.2rem; color:#fff; display:block;">@${username}</strong>
+                            <small class="text-grey" style="font-size:0.85rem; color:#bdc3c7; display:block;">UID: ${uid}</small>
+                        </div>
+                    </div>
+                    <div class="back-btn-circle" onclick="loadFeedbacks()">↩</div>
+                </div>
+                <div class="full-message-text" style="text-align:left; padding:30px; margin-top:15px;">${text}</div>
+                <div class="detail-footer">
+                    <button class="trash-btn" onclick="deleteFeedback('${id}')">🗑️ ลบ Feedback</button>
+                </div>
+            </div>
+        `;
+        db.collection("feedback_db").doc(id).update({ isRead: true });
+    }
+
+    // --- 4. ฟังก์ชันหลักโหลดรายการ Feedback บนหน้าจอหลัก ---
+    async function loadFeedbacks() {
+        const scrollArea = document.getElementById('main-scroll-area');
+        if (!scrollArea) return;
+
+        db.collection("feedback_db").orderBy("createdAt", "desc").onSnapshot(async (snapshot) => {
+            scrollArea.innerHTML = ''; 
+            if (snapshot.empty) {
+                scrollArea.innerHTML = '<div style="text-align:center; padding:20px;">ไม่มีข้อมูล Feedback ในระบบ</div>';
+                return;
+            }
+
+            for (const doc of snapshot.docs) {
+                const fb = doc.data();
+                const fbId = doc.id;
+                
+                // 🛠️ คีย์สำคัญ: ดึงฟิลด์ username จากคอลเลกชัน feedback_db ตามภาพจริงของฐานข้อมูล
+                const targetUsername = fb.username || "Unknown"; 
+                // 🛠️ Mapping คีย์ใหม่: เปลี่ยนจาก fb.story เป็น fb.message และ fb.toAdmin เป็น fb.topic ให้ตรงกับระบบจริง
+                const displayMessage = fb.message || 'ไม่มีข้อความ';
+                const displayTopic = fb.topic || 'ทั่วไป';
+
+                const card = document.createElement('div');
+                card.className = 'feedback-card';
+                card.innerHTML = `
+                    <div class="sender-info">
+                        <div class="sender-avatar" id="avatar-container-${fbId}">
+                            <div style="width:100%; height:100%; background:#415a77;"></div>
+                        </div>
+                        <div class="sender-meta">
+                            <strong class="d-block" style="font-size: 1.1rem; color: #fff;">@${targetUsername}</strong>
+                            <small id="id-${fbId}" class="d-block text-grey">Loading UID...</small>
+                        </div>
+                    </div>
+                    <div class="message-area">
+                        <span class="star-icon" onclick="toggleStar(event, '${fbId}', ${fb.isStarred || false})">
+                            ${fb.isStarred ? '★' : '☆'}
+                        </span>
+                        <div class="message-content">
+                            <p><strong style="color: #2ecc71;">หัวข้อ: ${displayTopic}</strong></p>
+                            <p>${displayMessage}</p>
+                            <p class="date-time">${formatDate(fb.createdAt)}</p>
+                        </div>
+                        <div class="action-icons">
+                            <div class="mail-box" onclick="toggleRead(event, '${fbId}', ${fb.isRead || false})">
+                                <span>✉️</span>
+                                ${fb.isRead ? '' : '<span class="notif-green-dot"></span>'}
+                            </div>
+                            <button class="more-btn" onclick="expandMessage('${fbId}', '${displayMessage.replace(/'/g, "\\'")}', '${targetUsername}')">...</button>
+                        </div>
+                    </div>
+                `;
+                scrollArea.appendChild(card);
+
+                // ดึงรูปและ UID ของผู้ใช้งานแบบเรียลไทม์
+                db.collection("users").where("username", "==", targetUsername).get().then(userSnapshot => {
+                    if (userSnapshot.empty) {
+                        return db.collection("users").where("characterName", "==", targetUsername).get();
+                    }
+                    return userSnapshot;
+                }).then(userSnapshot => {
+                    const avatarCont = document.getElementById(`avatar-container-${fbId}`);
+                    const idElem = document.getElementById(`id-${fbId}`);
+
+                    if (!userSnapshot.empty) {
+                        const uData = userSnapshot.docs[0].data();
+                        const uid = userSnapshot.docs[0].id;
+                        
+                        if (idElem) idElem.innerText = `UID: ${uid}`;
+                        // 🛠️ คีย์สำคัญ: ส่งข้อมูล uData.avatarSource ซึ่งเป็น Base64 ไปยังตัวรับฟังก์ชันแสดงผลหลัก
+                        if (avatarCont) avatarCont.innerHTML = getAvatarHTML(uData.avatarSource, targetUsername);
+                    } else {
+                        if (idElem) idElem.innerText = `User Not Found`;
+                        if (avatarCont) avatarCont.innerHTML = getAvatarHTML(null, targetUsername);
+                    }
+                }).catch(err => console.error("Error fetching user detail:", err));
+            }
+        });
+    }
+
+    function formatDate(ts) {
+        if (!ts) return "ไม่ระบุวันที่";
+        const d = (ts.toDate) ? ts.toDate() : new Date(ts);
+        return `วันที่ ${d.toLocaleDateString('th-TH')} | เวลา ${d.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'})}`;
+    }
+
+    async function deleteFeedback(id) {
+        if (confirm("คุณต้องการลบ Feedback นี้ใช่หรือไม่?")) {
+            await db.collection("feedback_db").doc(id).delete();
+            loadFeedbacks();
+        }
+    }
+
+    async function toggleStar(event, id, current) {
+        event.stopPropagation(); 
+        await db.collection("feedback_db").doc(id).update({ isStarred: !current });
+    }
+
+    async function toggleRead(event, id, current) {
+        event.stopPropagation();
+        await db.collection("feedback_db").doc(id).update({ isRead: !current });
+    }
+
+    window.onload = () => { loadFeedbacks(); };
+</script>
+</body>
+</html>

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal - Mission Life</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;700;800&display=swap" rel="stylesheet">
+
+    <script defer>
+        async function loadUsers() {
+            try {
+                const response = await fetch('http://localhost:3000/api/users');
+                if (!response.ok) throw new Error('Network response was not ok');
+                
+                const users = await response.json();
+                const tableBody = document.querySelector('.user-table tbody');
+                
+                if (tableBody) {
+                    tableBody.innerHTML = ''; // ล้างข้อมูลตัวอย่างออก
+                    users.forEach(user => {
+                        tableBody.innerHTML += `
+                            <tr>
+                                <td>${user._id}</td>
+                                <td>${user.email}</td>
+                                <td><span class="lvl-star">⭐ Lvl.${user.level || 1}</span></td>
+                                <td><a href="EditPer.html?id=${user._id}" class="edit-link">Edit</a></td>
+                            </tr>
+                        `;
+                    });
+                }
+            } catch (err) { 
+                console.error("โหลดข้อมูลล้มเหลว:", err); 
+            }
+        }
+
+        // เรียกใช้งานเมื่อโหลดหน้าเสร็จ
+        window.addEventListener('load', loadUsers);
+    </script>
+
+    <style>
+        :root {
+            --bg-dark: #0d1b2a;
+            --card-bg: #1b263b;
+            --text-main: #ffffff;
+        }
+        body {
+    background-color: #141e30;
+    color: white;
+    font-family: 'Kanit', sans-serif;
+    margin: 0;
+}
+       /* ===== Navbar (COPY จาก Quest.html) ===== */
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 40px;
+    border-bottom: 2px solid white;
+}
+
+.user-profile { 
+    display: flex; 
+    align-items: center; 
+    gap: 15px; 
+}
+
+.avatar-placeholder { 
+    width: 50px; 
+    height: 50px; 
+    background: #555; 
+    border-radius: 4px; 
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.title { 
+    display: block; 
+    font-weight: bold; 
+    font-size: 1.2rem; 
+}
+
+.rank { 
+    font-size: 0.8rem; 
+    color: #ccc; 
+}
+
+.nav-links { 
+    display: flex; 
+    gap: 35px; 
+}
+
+.nav-links a {
+    color: white;
+    text-decoration: none;
+    font-size: 1.1rem;
+    padding-bottom: 5px;
+}
+
+.nav-links a.active { 
+    border-bottom: 3px solid white; 
+    font-weight: bold; 
+}
+
+.avatar-placeholder {
+    width: 50px;
+    height: 50px;
+    background: #555; /* สีพื้นหลังสำรองถ้ารูปไม่ขึ้น */
+    border-radius: 4px;
+    overflow: hidden; /* บังคับให้รูปที่เกินขอบถูกตัดออก */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+        .personal-container { flex: 1; padding: 20px 40px; display: flex; flex-direction: column; min-height: 0; }
+        .personal-box {
+            background-color: #2c3e50; border: 2px solid #6a7c92;
+            border-radius: 12px; height: 100%; display: flex;
+            flex-direction: column; padding: 20px;
+        }
+        .box-header { text-align: center; padding: 10px; font-weight: 800; border-bottom: 1px solid white; margin-bottom: 20px; }
+        .search-wrapper { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .search-wrapper input { width: 100%; max-width: 450px; padding: 8px; border-radius: 4px; }
+        .user-table-outer { border: 1px solid white; border-radius: 12px; background-color: #1a2639; overflow-y: auto; flex: 1; }
+        .user-table { width: 100%; border-collapse: collapse; }
+        .user-table th { padding: 18px; border-bottom: 2px solid white; position: sticky; top: 0; background: #1a2639; }
+        .user-table td { padding: 15px; text-align: center; border: 1px solid rgba(255, 255, 255, 0.2); }
+        .lvl-star { color: #f1c40f; font-weight: bold; }
+        .edit-link { color: #3498db; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="user-profile">
+            <div class="avatar-placeholder">
+    <img src="Lo.png" alt="Admin Logo" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;">
+</div>
+            <div class="user-info">
+                <span class="title">MISSION LIFE</span>
+                <span class="rank" id="admin-display">สวัสดี Admin</span>
+            </div>
+        </div>
+        <nav class="nav-links">
+            <a href="Dashboard.html">Dashbord</a>
+            <a href="Quest.html">Quest</a>
+            <a href="Personal.html" class="active">Personal</a>
+            <a href="feedback.html">Feedback</a>
+        </nav>
+    </header>
+
+    <main class="personal-container">
+        <div class="personal-box">
+            <div class="box-header">Personal</div>
+            
+            <div class="search-wrapper">
+    <input type="text" id="user-search" placeholder="ค้นหาชื่อหรือ ID..." onkeyup="filterUsers()">
+    <button class="filter-btn" onclick="filterUsers()">🔍</button>
+            </div>
+
+            <div class="user-table-outer">
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Email</th>
+                            <th>Level</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+<script defer>
+    // เก็บข้อมูล User ทั้งหมดไว้ที่นี่ เพื่อให้ฟังก์ชันค้นหาเรียกใช้ได้
+    let allUsers = [];
+
+    async function loadUsers() {
+        try {
+            const response = await fetch('http://localhost:3000/api/users');
+            if (!response.ok) throw new Error('Network response was not ok');
+            
+            allUsers = await response.json();
+            renderTable(allUsers); // เรียกฟังก์ชันวาดตาราง
+        } catch (err) { 
+            console.error("โหลดข้อมูลล้มเหลว:", err); 
+        }
+    }
+
+    // ฟังก์ชันสำหรับวาดแถวในตาราง
+    function renderTable(users) {
+        const tableBody = document.querySelector('.user-table tbody');
+        if (!tableBody) return;
+        
+        tableBody.innerHTML = ''; 
+        users.forEach(user => {
+            // ✅ เปลี่ยนจาก user._id เป็น user.id เพื่อแก้ปัญหา undefined
+            const userId = user.id || user._id || "No ID"; 
+            
+            tableBody.innerHTML += `
+                <tr>
+                    <td>${userId}</td>
+                    <td>${user.email || 'ไม่มีอีเมล'}</td>
+                    <td><span class="lvl-star">⭐ Lvl.${user.level || 1}</span></td>
+                    <td><a href="EditPer.html?id=${userId}" class="edit-link">Edit</a></td>
+                </tr>
+            `;
+        });
+    }
+
+    function filterUsers() {
+    const input = document.getElementById('user-search');
+    if (!input) return;
+    
+    const searchTerm = input.value.toLowerCase().trim();
+    
+    // เลือกสิ่งที่ต้องการกรอง (จะการ์ด .user-mini-card หรือ แถว tr ก็ได้)
+    const items = document.querySelectorAll('.user-mini-card, .user-table tbody tr');
+
+    items.forEach(item => {
+        // ดึงข้อความ "ทั้งหมด" ที่ปรากฏอยู่ใน Element นั้นๆ มาเช็ค
+        const allContent = item.innerText.toLowerCase();
+        
+        // ถ้าในเนื้อหามีคำที่ตรงกับที่ Search (ไม่ว่าจะเป็น ID หรือ Email ที่โชว์อยู่)
+        if (allContent.includes(searchTerm)) {
+            item.style.display = ""; 
+        } else {
+            item.style.display = "none";
+        }
+    });
+}
+
+
+    window.addEventListener('load', loadUsers);
+</script>
+</body>
+</html>

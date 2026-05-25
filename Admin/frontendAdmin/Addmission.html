@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Quest Management - Mission Life</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #141e30;
+            --card-bg: #1c2a3e;
+            --border-color: #3e4f68;
+            --accent-blue: #3498db;
+            --accent-green: #2ecc71;
+            --accent-orange: #f39c12;
+            --accent-purple: #9b59b6;
+        }
+
+        body {
+            background-color: #141e30;
+            color: white;
+            font-family: 'Kanit', sans-serif;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        /* --- Navbar --- */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 40px;
+            border-bottom: 2px solid white;
+        }
+
+        .user-profile { display: flex; align-items: center; gap: 15px; }
+        .avatar-placeholder { width: 50px; height: 50px; background: #555; border-radius: 4px; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+        .avatar-placeholder img { width: 100%; height: 100%; object-fit: cover; }
+
+        .nav-links { display: flex; gap: 35px; }
+        .nav-links a { color: white; text-decoration: none; font-size: 1.1rem; padding-bottom: 5px; transition: none; }
+        .nav-links a.active { border-bottom: 3px solid white; font-weight: bold; }
+
+        /* --- Layout --- */
+        .quest-layout {
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            padding: 20px;
+            height: calc(100vh - 100px);
+        }
+
+        .content-box {
+            background-color: #1b263b;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .box-header {
+            background: rgba(255,255,255,0.05);
+            text-align: center;
+            padding: 12px; 
+            font-weight: bold;
+            font-size: 1.05rem;
+            color: #ffffff;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* --- Sidebar & Status Bar --- */
+        .search-area { padding: 15px; border-bottom: 1px solid var(--border-color); }
+        .user-scroll { flex: 1; overflow-y: auto; padding: 15px; }
+        
+        .user-mini-card {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        .user-mini-card.active { border: 2px solid var(--accent-green); background: rgba(46, 204, 113, 0.05); }
+
+        .selection-bar {
+            padding: 12px;
+            margin: 10px;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid var(--accent-green);
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+
+        /* --- Mission Form Layout --- */
+        .mission-new-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .mission-card {
+            background: #243447;
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .step-num {
+            position: absolute; top: 12px; left: 12px;
+            background: #34495e; width: 22px; height: 22px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 0.75rem; border: 1px solid #555;
+        }
+
+        label { display: block; margin-bottom: 8px; color: #cbd5e0; font-size: 0.85rem; padding-left: 28px; font-weight: bold; }
+        .sub-label { color: #888; font-size: 0.7rem; font-weight: normal; margin-bottom: 4px; display: block; }
+
+        input.input-dark {
+            width: 100%; background: #1a2634; border: 1px solid #3e4f68;
+            color: white; padding: 10px; border-radius: 8px; box-sizing: border-box; font-size: 0.9rem;
+        }
+
+        .tag-container, .unit-container, .time-options { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; align-items: center; }
+
+        .tag-btn, .unit-btn, .time-btn {
+            background: #2c3e50; border: 1px solid #3e4f68;
+            color: white; padding: 7px 14px; border-radius: 20px; cursor: pointer; font-size: 0.8rem;
+        }
+        .tag-btn.active, .unit-btn.active, .time-btn.active { background: #4a69bd; border-color: #5c7cfa; }
+
+        .goal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .goal-item {
+            background: #1a2634; border: 1px solid #3e4f68;
+            padding: 15px 10px; border-radius: 8px; text-align: center; cursor: pointer;
+        }
+        .goal-item.active { border: 2px solid var(--accent-orange); background: rgba(243, 156, 18, 0.1); }
+        .goal-item strong { display: block; font-size: 0.9rem; color: var(--accent-orange); margin-bottom: 4px; }
+        .goal-item small { display: block; font-size: 0.7rem; color: #888; line-height: 1.2; }
+
+        .counter { display: flex; background: #0d1b2a; border-radius: 5px; overflow: hidden; border: 1px solid #3e4f68; }
+        .counter button { background: none; border: none; color: var(--accent-orange); padding: 5px 12px; cursor: pointer; font-weight: bold; }
+        .counter input { width: 45px; text-align: center; background: none; border: none; color: white; font-size: 0.9rem; }
+
+        .reward-preview-container {
+            display: flex;
+            align-items: flex-end;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .xp-input-box {
+            flex: 0.5;
+        }
+
+        .xp-input-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: #1a2634;
+            border: 1px solid #3e4f68;
+            padding: 5px 10px;
+            border-radius: 8px;
+        }
+        .xp-input-wrapper span { color: #888; font-weight: bold; font-size: 1.2rem; }
+        .xp-input-wrapper input { background: none; border: none; color: white; width: 100%; outline: none; font-size: 1rem; }
+
+        .reward-tag-box {
+            background: #000;
+            border: 2px solid var(--accent-green);
+            color: var(--accent-green);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            flex: 1;
+            font-weight: bold;
+            font-size: 0.9rem;
+            min-height: 45px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        #date-picker-area {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 10px;
+            border: 1px dashed var(--border-color);
+        }
+
+        .mission-footer { grid-column: span 2; display: flex; gap: 20px; margin-top: 10px; }
+        .btn-reset { flex: 1; background: #c0392b; border: none; color: white; padding: 15px; border-radius: 10px; cursor: pointer; font-size: 1.1rem; font-weight: bold; }
+        .btn-create { flex: 1; background: #27ae60; border: none; color: white; padding: 15px; border-radius: 10px; cursor: pointer; font-size: 1.1rem; font-weight: bold; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-content { background: #1b263b; padding: 30px; border-radius: 15px; width: 350px; border: 2px solid #4a69bd; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="user-profile">
+            <div class="avatar-placeholder"><img src="Lo.png" alt="Logo"></div>
+            <div class="user-info">
+                <strong style="font-size: 1.2rem; display: block;">MISSION LIFE</strong>
+                <small>สวัสดี Admin</small>
+            </div>
+        </div>
+        <nav class="nav-links">
+            <a href="Dashboard.html">Dashboard</a>
+            <a href="Quest.html" class="active">Quest</a>
+            <a href="Personal.html">Personal</a>
+            <a href="feedback.html">Feedback</a>
+        </nav>
+    </header>
+
+    <main class="quest-layout">
+        <aside class="content-box">
+            <div class="box-header">USER LIST</div>
+            <div class="search-area">
+                <input type="text" placeholder="ค้นหาชื่อหรือ ID..." class="input-dark">
+            </div>
+            <div class="user-scroll">
+                <div class="user-mini-card active" onclick="updateTarget('ทั้งหมด (Global)', this)">
+                    <strong>🌟 ทั้งหมด (Global)</strong><br>
+                    <small style="font-size: 0.75rem;">ส่งให้ทุกคนในระบบ</small>
+                </div>
+            </div>
+            <div class="selection-bar">
+                🎯 ส่งให้: <strong id="target-name" style="color:var(--accent-green)">ทั้งหมด (Global)</strong>
+            </div>
+        </aside>
+
+        <section class="content-box">
+            <div class="box-header">MISSION USER</div>
+            <div class="mission-new-layout">
+                
+                <div class="mission-card">
+                    <div class="step-num">1</div>
+                    <label>ชื่อ MISSION</label>
+                    <input type="text" class="input-dark" placeholder="ระบุชื่อภารกิจ...">
+                    <label style="margin-top:15px;">ประเภท MISSION</label>
+                    <div class="tag-container" id="type-list">
+                        <button class="tag-btn active" onclick="selectCategory(this, 'สุขภาพ')">🍎 สุขภาพ</button>
+                        <button class="tag-btn" onclick="selectCategory(this, 'การเรียน')">📚 การเรียน</button>
+                        <button class="tag-btn" onclick="selectCategory(this, 'การเงิน')">💰 การเงิน</button>
+                        <button class="tag-btn add-btn" onclick="openModal('modal-type')">➕ เพิ่ม</button>
+                    </div>
+                </div>
+
+                <div class="mission-card">
+                    <div class="step-num">3</div>
+                    <label>ตั้งเป้าหมาย</label>
+                    <div style="display:flex; align-items:center; gap:10px; margin-top:10px;">
+                        <span style="font-size: 0.9rem;">จำนวน</span>
+                        <div class="counter">
+                            <button onclick="changeVal(-1)">−</button>
+                            <input type="number" value="1" id="goal-count">
+                            <button onclick="changeVal(1)">+</button>
+                        </div>
+                        <span id="target-unit-display" style="color:var(--accent-orange); font-weight:bold; font-size: 0.9rem;">ครั้ง</span>
+                    </div>
+                    <div class="unit-container" id="unit-list">
+                        <span style="font-size: 0.8rem; color: #888; margin-right: 5px;">หน่วย</span>
+                        <button class="unit-btn active" onclick="updateUnit(this, 'ครั้ง')">ครั้ง</button>
+                        <button class="unit-btn" onclick="updateUnit(this, 'เล่ม')">เล่ม</button>
+                        <button class="unit-btn" onclick="updateUnit(this, 'กม.')">กม.</button>
+                        <button class="unit-btn add-btn" onclick="openModal('modal-unit')">➕ เพิ่ม</button>
+                    </div>
+                </div>
+
+                <div class="mission-card">
+                    <div class="step-num">2</div>
+                    <label>ประเภท GOAL</label>
+                    <div class="goal-grid">
+                        <div class="goal-item active" onclick="selectGoalType(this, 'count')">
+                            <strong>📊 นับครั้ง</strong>
+                            <small>สะสมให้ครบตามจำนวนที่ตั้งไว้</small>
+                        </div>
+                        <div class="goal-item" onclick="selectGoalType(this, 'xp')">
+                            <strong>⭐ สะสม XP</strong>
+                            <small>ทำแล้วได้ XP สะสมตามเป้า</small>
+                        </div>
+                        <div class="goal-item" onclick="selectGoalType(this, 'streak')">
+                            <strong>🔥 ต่อเนื่อง</strong>
+                            <small>ทำทุกวัน ห้ามขาด</small>
+                        </div>
+                        <div class="goal-item" onclick="selectGoalType(this, 'once')">
+                            <strong>✅ ทำครั้งเดียว</strong>
+                            <small>เป้าหมายที่ทำแค่ครั้งเดียว</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mission-card">
+                    <div class="step-num">4</div>
+                    <label>ระยะเวลา</label>
+                    <div class="time-options">
+                        <button class="time-btn" onclick="selectTime(this, 7)">7 วัน</button>
+                        <button class="time-btn active" onclick="selectTime(this, 30)">30 วัน</button>
+                        <button class="time-btn" onclick="selectTime(this, 90)">90 วัน</button>
+                        <button class="time-btn custom-btn" onclick="openDatePicker(this)">📅 กำหนดเอง</button>
+                    </div>
+
+                    <div id="date-picker-area" style="display:none;">
+                        <div style="display:flex; justify-content:space-between; gap:10px;">
+                            <div style="flex:1">
+                                <small class="sub-label">วันที่เริ่ม:</small>
+                                <input type="date" class="input-dark" id="start-date-picker">
+                            </div>
+                            <div style="flex:1">
+                                <small class="sub-label">วันที่สิ้นสุด:</small>
+                                <input type="date" class="input-dark" id="end-date-picker">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="reward-preview-container">
+                        <div class="xp-input-box">
+                            <span class="sub-label">คะแนนที่จะได้รับ</span>
+                            <div class="xp-input-wrapper">
+                                <span>+</span>
+                                <input type="number" value="100" id="xp-input-val" oninput="updateXP(this.value)">
+                            </div>
+                        </div>
+                        <div class="reward-tag-box">
+                            <span style="font-weight:normal; font-size:0.75rem;">รางวัลที่ได้รับ</span>
+                            <span id="xp-preview">+ 100 XP</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mission-footer">
+                    <button class="btn-reset" onclick="location.reload()">ล้างข้อมูล</button>
+                    <button class="btn-create" onclick="createMission()">สร้างภารกิจ</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div id="modal-type" class="modal"><div class="modal-content"><h3>➕ เพิ่มประเภทใหม่</h3><input type="text" id="input-new-type" class="input-dark"><div style="margin-top:20px;"><button style="background:#555; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;" onclick="closeModal('modal-type')">ยกเลิก</button> <button style="background:var(--accent-green); color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;" onclick="addNewItem('type')">ตกลง</button></div></div></div>
+    <div id="modal-unit" class="modal"><div class="modal-content"><h3>➕ เพิ่มหน่วยใหม่</h3><input type="text" id="input-new-unit" class="input-dark"><div style="margin-top:20px;"><button style="background:#555; color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;" onclick="closeModal('modal-unit')">ยกเลิก</button> <button style="background:var(--accent-green); color:white; border:none; padding:8px 15px; border-radius:5px; cursor:pointer;" onclick="addNewItem('unit')">ตกลง</button></div></div></div>
+
+    <script>
+// --- 1. ส่วนตัวแปรหลัก ---
+const API_BASE_URL = 'http://localhost:3000/api';
+let allUsers = [];
+let selectedUserId = "GLOBAL";
+let selectedUserEmail = "ทั้งหมด (Global)";
+let selectedCategory = "สุขภาพ";
+let selectedGoalType = "count";
+let selectedUnit = "ครั้ง";
+let selectedDuration = 30;
+
+// --- 2. ฟังก์ชันจัดการเวลา ---
+function selectTime(btn, days) {
+    console.log("✅ เลือกจำนวนวัน:", days);
+    document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedDuration = days;
+    
+    const dateArea = document.getElementById('date-picker-area');
+    if(dateArea) dateArea.style.display = 'none';
+    
+    console.log("📊 selectedDuration อัปเดต:", selectedDuration);
+}
+
+// ✅ ฟังก์ชันเปิด Date Picker
+function openDatePicker(btn) {
+    console.log("✅ เปิดปฏิทินกำหนดเอง");
+    document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    
+    const dateArea = document.getElementById('date-picker-area');
+    if(dateArea) dateArea.style.display = 'block';
+    
+    // ✅ คำนวณเมื่อเปลี่ยนวันที่
+    const startInput = document.getElementById('start-date-picker');
+    const endInput = document.getElementById('end-date-picker');
+    
+    const calculateDuration = () => {
+        if (startInput.value && endInput.value) {
+            const start = new Date(startInput.value);
+            const end = new Date(endInput.value);
+            const diffTime = Math.abs(end - start);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            selectedDuration = diffDays;
+            console.log("📊 Duration คำนวณจากวันที่:", selectedDuration, "วัน");
+        }
+    };
+    
+    startInput.addEventListener('change', calculateDuration);
+    endInput.addEventListener('change', calculateDuration);
+}
+
+// --- 3. ส่วนการดึงข้อมูล User จาก API ---
+async function fetchUsers() {
+    try {
+        const res = await fetch(`${API_BASE_URL}/users`);
+        if (!res.ok) throw new Error('Network response was not ok');
+        allUsers = await res.json();
+        renderUsers(allUsers);
+    } catch (err) {
+        console.error("❌ โหลด User ไม่สำเร็จ:", err);
+        renderUsers([]);
+    }
+}
+
+function renderUsers(users) {
+    const container = document.querySelector('.user-scroll');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const globalCard = document.createElement('div');
+    globalCard.className = `user-mini-card global-card ${selectedUserId === 'GLOBAL' ? 'active' : ''}`;
+    globalCard.innerHTML = `<strong>🌟 ทั้งหมด (Global)</strong><br><small style="font-size: 0.75rem;">ส่งให้ทุกคนในระบบ</small>`;
+    globalCard.onclick = () => selectTarget('GLOBAL', 'ทั้งหมด (Global)');
+    container.appendChild(globalCard);
+
+    users.forEach(u => {
+        const div = document.createElement('div');
+        div.className = `user-mini-card user-item-card ${selectedUserId === u.id ? 'active' : ''}`;
+        div.setAttribute('data-user-id', u.id);
+        div.innerHTML = `
+            <strong>👤 ${u.email || u.id.substring(0, 15)}</strong><br>
+            <small style="font-size: 0.75rem;">ID: ${u.id.substring(0, 8)}... | Lvl.${u.level || 1}</small>
+        `;
+        div.onclick = () => selectTarget(u.id, u.email || u.id);
+        container.appendChild(div);
+    });
+}
+
+function selectTarget(id, name) {
+    selectedUserId = id;
+    selectedUserEmail = name;
+    document.getElementById('target-name').innerText = name;
+    
+    document.querySelectorAll('.user-mini-card').forEach(card => card.classList.remove('active'));
+    
+    if (id === 'GLOBAL') {
+        const globalBtn = document.querySelector('.user-mini-card.global-card');
+        if (globalBtn) globalBtn.classList.add('active');
+    } else {
+        const activeCard = document.querySelector(`[data-user-id="${id}"]`);
+        if (activeCard) activeCard.classList.add('active');
+    }
+}
+
+// --- 4. ฟังก์ชันจัดการ Category ---
+function selectCategory(btn, category) {
+    selectedCategory = category;
+    console.log("✅ เลือก Category:", category);
+    selectMe(btn, 'tag-btn');
+}
+
+// --- 5. ฟังก์ชันจัดการ Goal Type ---
+function selectGoalType(btn, type) {
+    selectedGoalType = type;
+    console.log("✅ เลือก Goal Type:", type);
+    selectMe(btn, 'goal-item');
+}
+
+// --- 6. ฟังก์ชันจัดการ UI อื่นๆ ---
+function selectMe(el, className) {
+    document.querySelectorAll('.' + className).forEach(item => item.classList.remove('active'));
+    el.classList.add('active');
+}
+
+function updateUnit(btn, unitName) {
+    selectedUnit = unitName;
+    console.log("✅ เลือก Unit:", unitName);
+    selectMe(btn, 'unit-btn');
+    document.getElementById('target-unit-display').innerText = unitName;
+}
+
+function changeVal(n) {
+    let input = document.getElementById('goal-count');
+    let cur = parseInt(input.value) || 1;
+    if (cur + n >= 1) input.value = cur + n;
+}
+
+function updateXP(val) {
+    document.getElementById('xp-preview').innerText = '+ ' + (val || 0) + ' XP';
+}
+
+function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+function addNewItem(mode) {
+    if(mode === 'type') {
+        let txt = document.getElementById('input-new-type').value.trim();
+        if(!txt) return;
+        let btn = document.createElement('button');
+        btn.className = 'tag-btn';
+        btn.innerText = txt;
+        btn.setAttribute('data-category', txt);
+        btn.onclick = function() { selectCategory(this, txt); };
+        let container = document.getElementById('type-list');
+        container.insertBefore(btn, container.querySelector('.add-btn'));
+        closeModal('modal-type');
+        document.getElementById('input-new-type').value = '';
+    } else if(mode === 'unit') {
+        let txt = document.getElementById('input-new-unit').value.trim();
+        if(!txt) return;
+        let btn = document.createElement('button');
+        btn.className = 'unit-btn';
+        btn.innerText = txt;
+        btn.setAttribute('data-unit', txt);
+        btn.onclick = function() { updateUnit(this, txt); };
+        let container = document.getElementById('unit-list');
+        container.insertBefore(btn, container.querySelector('.add-btn'));
+        closeModal('modal-unit');
+        document.getElementById('input-new-unit').value = '';
+    }
+}
+
+// --- 7. ฟังก์ชันสร้าง Mission ---
+async function createMission() {
+    try {
+        const missionName = document.querySelector('input[placeholder="ระบุชื่อภารกิจ..."]').value.trim();
+        const totalCount = parseInt(document.getElementById('goal-count').value) || 1;
+        const xp = parseInt(document.getElementById('xp-input-val').value) || 0;
+
+        if (!missionName) {
+            alert("⚠️ กรุณาระบุชื่อภารกิจ");
+            return;
+        }
+
+        console.log("🔍 ก่อนส่ง - selectedDuration:", selectedDuration, "ชนิด:", typeof selectedDuration);
+
+        const questData = {
+            missionName: missionName,
+            category: selectedCategory,
+            goalType: selectedGoalType,
+            unit: selectedUnit,
+            totalCount: totalCount,
+            dailyQuota: selectedGoalType === 'streak' ? totalCount : 1,
+            duration: parseInt(selectedDuration) || 30,
+            xp: xp,
+            targetUser: selectedUserId
+        };
+
+        console.log("📦 ส่งข้อมูล:", questData);
+
+        const res = await fetch(`${API_BASE_URL}/missions/create`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(questData)
+        });
+
+        console.log("📊 Response Status:", res.status);
+
+        const data = await res.json();
+        console.log("✅ Response Data:", data);
+
+        if (!res.ok) {
+            throw new Error(data.message || "สร้าง Mission ไม่สำเร็จ");
+        }
+
+        alert("🎉 สร้าง Mission สำเร็จ! Duration: " + questData.duration + " วัน");
+        window.location.href = "Quest.html";
+
+    } catch (err) {
+        console.error("❌ Error:", err);
+        alert("❌ เกิดข้อผิดพลาด: " + err.message);
+    }
+}
+
+// --- 8. เริ่มต้นระบบ ---
+window.onload = async () => {
+    console.log("🚀 โหลดหน้า AddMission.html");
+    
+    selectedCategory = "สุขภาพ";
+    selectedGoalType = "count";
+    selectedUnit = "ครั้ง";
+    selectedDuration = 30;
+    selectedUserId = "GLOBAL";
+    selectedUserEmail = "ทั้งหมด (Global)";
+    
+    await fetchUsers();
+    
+    const searchInput = document.querySelector('.search-area input');
+    if (searchInput) {
+        searchInput.onkeyup = () => {
+            const term = searchInput.value.toLowerCase();
+            const filtered = allUsers.filter(u => 
+                (u.email && u.email.toLowerCase().includes(term)) || 
+                u.id.toLowerCase().includes(term)
+            );
+            renderUsers(filtered);
+        };
+    }
+
+    console.log("✅ AddMission.html พร้อมใช้งาน");
+    console.log("📊 Default Duration:", selectedDuration);
+};
+</script>
+</body>
+</html>

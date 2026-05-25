@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Mission Life</title>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <div class="signup-container">
+        <div class="left-section">
+            <div class="form-box">
+                <h1>Hello!</h1>
+                <p class="subtitle">Log In to get started</p>
+                
+                <form id="loginForm"> <div class="input-group">
+                        <span class="icon"></span>
+                        <input type="text" placeholder="Username" required>
+                    </div>
+                    
+                    <div class="input-group">
+                        <span class="icon"></span>
+                        <input type="password" placeholder="Password" > <!-- ถ้าหากจะบังคับใส่รหัสเติม required -->
+                    </div>
+
+                    <button type="submit" class="btn-signup">Log In</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="right-section">
+            <img src="Lo.png" alt="Illustration" class="hero-image">
+        </div>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('loginForm');
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // ป้องกันหน้าเว็บรีเฟรช
+
+            const email = loginForm.querySelector('input[placeholder="Username"]').value;
+            const password = loginForm.querySelector('input[placeholder="Password"]').value;
+
+            try {
+                // ส่งข้อมูลไปที่ API ฝั่ง Admin ที่เขียนไว้ใน Node.js
+                const response = await fetch('http://localhost:3000/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    alert("เข้าสู่ระบบสำเร็จ!");
+                    // เก็บ email ไว้ในเครื่องเพื่อบอกว่าเรา login อยู่
+                    localStorage.setItem('adminEmail', result.adminEmail);
+                    // เปลี่ยนหน้าไปที่ Dashboard
+                    window.location.href = 'Dashboard.html'; 
+                } else {
+                    // ถ้า login ไม่ผ่าน (รหัสผิด หรือไม่ใช่ admin)
+                    alert("ข้อผิดพลาด: " + result.message);
+                }
+            } catch (error) {
+                console.error("Connection Error:", error);
+                alert("ไม่สามารถติดต่อเซิร์ฟเวอร์ได้ (อย่าลืมรัน node server.js นะครับ)");
+            }
+        });
+    </script>
+
+</body>
+
+<style>
+    :root {
+    --bg-left: #94a3b8; 
+    --bg-right: #1e3554; 
+    --input-bg: rgba(255, 255, 255, 0.2);
+    --text-white: #ffffff;
+}
+
+* {
+    box-sizing: border-box;
+    font-family: 'Kanit', sans-serif;
+}
+
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+.signup-container {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+}
+
+.left-section {
+    flex: 1.2;
+    background-color: var(--bg-left);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+}
+
+.form-box {
+    width: 100%;
+    max-width: 400px;
+    color: var(--text-white);
+}
+
+.form-box h1 {
+    font-size: 3rem;
+    margin-bottom: 0;
+}
+
+.form-box .subtitle {
+    font-size: 1.5rem;
+    margin-bottom: 40px;
+    opacity: 0.9;
+}
+
+.input-group {
+    background: var(--input-bg);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 15px;
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    backdrop-filter: blur(5px);
+}
+
+.input-group .icon {
+    margin-right: 15px;
+    font-size: 1.2rem;
+    opacity: 0.7;
+}
+
+.input-group input {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.1rem;
+    width: 100%;
+    outline: none;
+}
+
+.input-group input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.btn-signup {
+    width: 100%;
+    padding: 15px;
+    border-radius: 15px;
+    border: none;
+    background: var(--bg-right);
+    color: white;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: 0.3s;
+    margin-top: 10px;
+}
+
+.btn-signup:hover {
+    background: #2c3e50;
+    transform: translateY(-2px);
+}
+
+.right-section {
+    flex: 1;
+    background-color: var(--bg-right);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+}
+
+.hero-image {
+    max-width: 175%;
+    height: auto;
+    object-fit: contain;
+}
+
+@media (max-width: 768px) {
+    .signup-container {
+        flex-direction: column;
+    }
+    .right-section {
+        display: none;
+    }
+}
+</style>
+</html>
